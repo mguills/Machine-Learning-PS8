@@ -214,6 +214,13 @@ def kMedoids(points, k, init='random', plot=False) :
 def main() :
     ### ========== TODO : START ========== ###
     # part 1: explore LFW data set
+    X = np.loadtxt("faces_features.csv", delimiter=",")
+    y = np.loadtxt("faces_labels.csv", delimiter=",")
+    avg = np.mean(X, axis=0)
+    util.show_image(avg)
+    U, mu = util.PCA(X)
+    util.plot_gallery([util.vec_to_image(U[:,i]) for i in xrange(12)])
+    return
     
     ### ========== TODO : END ========== ###
     
