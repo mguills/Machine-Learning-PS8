@@ -220,7 +220,7 @@ def kMeans(points, k, init='random', plot=False) :
 
     index = 0
 
-    while not (k_clusters.equivalent(prev_clusters)) :
+    while (k_clusters.equivalent(prev_clusters) == False) :
         cluster_points = [[] for i in range(k)] # get points for each cluster
 
         # get new cluster assignments
@@ -228,7 +228,7 @@ def kMeans(points, k, init='random', plot=False) :
             dists = np.zeros(k)
             curr_point = points[i]
             for j in range(k):
-                dists[j] = curr_point.distance(initial_points[j])
+                dists[j] = curr_point.distance(k_clusters.members[j].centroid())
             min_cluster = np.argmin(dists)
             cluster_points[min_cluster].append(curr_point)
 
@@ -264,14 +264,16 @@ def kMedoids(points, k, init='random', plot=False) :
 
 def main() :
     ### ========== TODO : START ========== ###
+    X,y = util.get_lfw_data()
+    n, d = X.shape
     # part 1: explore LFW data set
-    X = np.loadtxt("faces_features.csv", delimiter=",")
-    y = np.loadtxt("faces_labels.csv", delimiter=",")
-    avg = np.mean(X, axis=0)
-    util.show_image(avg)
-    U, mu = util.PCA(X)
-    util.plot_gallery([util.vec_to_image(U[:,i]) for i in xrange(12)])
-    return
+    # X = np.loadtxt("faces_features.csv", delimiter=",")
+    # y = np.loadtxt("faces_labels.csv", delimiter=",")
+    # avg = np.mean(X, axis=0)
+    # util.show_image(avg)
+    # U, mu = util.PCA(X)
+    # util.plot_gallery([util.vec_to_image(U[:,i]) for i in xrange(12)])
+
 
     ### ========== TODO : END ========== ###
 
@@ -283,21 +285,21 @@ def main() :
     # part b: test Cluster implementation
     # centroid: [ 1.04022358  0.62914619]
 
-    # np.random.seed(1234)
-    # sim_points = generate_points_2d(20)
-    # cluster = Cluster(sim_points)
-    # print 'centroid:', cluster.centroid().attrs
-    #
-    # # parts c-d: test kMeans implementation using toy dataset
-    # np.random.seed(1234)
-    # sim_points = generate_points_2d(20)
-    # k = 3
-    #
-    # # test cluster using random initialization
-    # kmeans_clusters = kMeans(sim_points, k, init='random', plot=True)
-    #
-    # # test cluster using cheat initialization
-    # kmeans_clusters = kMeans(sim_points, k, init='cheat', plot=True)
+    np.random.seed(1234)
+    sim_points = generate_points_2d(20)
+    cluster = Cluster(sim_points)
+    print 'centroid:', cluster.centroid().attrs
+
+    # parts c-d: test kMeans implementation using toy dataset
+    np.random.seed(1234)
+    sim_points = generate_points_2d(20)
+    k = 3
+
+    # test cluster using random initialization
+    kmeans_clusters = kMeans(sim_points, k, init='random', plot=True)
+
+    # test cluster using cheat initialization
+    kmeans_clusters = kMeans(sim_points, k, init='cheat', plot=True)
 
 
 
@@ -310,10 +312,70 @@ def main() :
     # part b: determine ``most discriminative'' and ``least discriminative'' pairs of images
     np.random.seed(1234)
 
-    X1, y1 = util.limit_pics(X, y, [4, 13], 40)
     points = build_face_image_points(X1, y1)
+    pair_cluster = kMeans(points, 2, init='cheat', plot=True)
 
-    print points
+    scores = np.zeros((19,19)) # array to stores scores for each pair of pics
+
+    # loop over all pairs of pictures
+    for i in range(19):
+        scores[i][i] = 0.8 # assign score of current pic to not mess up finding most/least discrim
+        for j in range(i+1,19):
+            X1, y1 = util.limit_pics(X, y, [i, j], 40)
+            points = build_face_image_points(X1, y1)
+            pair_cluster = kMeans(points, 2, init='cheat', plot=False) # get cluster for current pair
+            score = pair_cluster.score()
+            scores[i][j] = score # update scores
+            scores[j][i] = score
+
+    # print scores
+
+    least_discrim = np.unravel_index(scores.argmin(), scores.shape) # get indices for least_discrim
+    most_discrim = np.unravel_index(scores.argmax(), scores.shape) # get indices for most_discrim
+
+    # print least_discrim
+    # print most_discrim
+
+    # print out pics of most and least discriminative pairs of people
+    max_pics = 1
+    num_pics = 1
+
+    for i in range(n):
+        if y[i] == least_discrim[0]:
+            util.show_image(X[i])
+            num_pics+=1
+            if (num_pics > max_pics):
+                num_pics = 1
+                break
+
+    for i in range(n):
+        if y[i] == least_discrim[1]:
+            util.show_image(X[i])
+            num_pics+=1
+            if (num_pics > max_pics):
+                num_pics = 1
+                break
+
+    for i in range(n):
+        if y[i] == most_discrim[0]:
+            util.show_image(X[i])
+            num_pics+=1
+            if (num_pics > max_pics):
+                num_pics = 1
+                break
+
+    for i in range(n):
+        if y[i] == most_discrim[1]:
+            util.show_image(X[i])
+            num_pics+=1
+            if (num_pics > max_pics):
+                num_pics = 1
+                break
+
+
+
+
+
 
     ### ========== TODO : END ========== ###
 
